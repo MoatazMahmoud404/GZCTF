@@ -400,7 +400,7 @@ const Configs: FC = () => {
         <Stack gap="sm">
           <Title order={2}>{t('admin.content.settings.ai.title')}</Title>
           <Divider />
-          <SimpleGrid cols={4} className={misc.alignCenter}
+          <SimpleGrid cols={4} className={misc.alignCenter}>
             <Switch
               checked={aiConfig?.enabled ?? false}
               disabled={disabled}
