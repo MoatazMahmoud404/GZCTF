@@ -237,6 +237,7 @@ _Pvt_Extensions
 
 # Docs
 docs
+DOCS/
 
 **/appsettings.json
 **/appsettings.*.json
