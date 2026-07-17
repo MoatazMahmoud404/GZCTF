@@ -95,9 +95,11 @@ internal static class ServicesExtension
             builder.Services.AddSingleton<TrafficRecorderRegistry>();
 
             // AI Services
-            builder.Services.AddSingleton<IAIProvider, OpenAiCompatibleProvider>();
-            builder.Services.AddSingleton<ContextAssembler>();
-            builder.Services.AddSingleton<AiResponseParser>();
+            // Registered as Scoped because OpenAiCompatibleProvider consumes the scoped
+            // IOptionsSnapshot<AiGlobalConfig>; a Singleton cannot consume a scoped service.
+            builder.Services.AddScoped<IAIProvider, OpenAiCompatibleProvider>();
+            builder.Services.AddScoped<ContextAssembler>();
+            builder.Services.AddScoped<AiResponseParser>();
 
             builder.Services.AddHostedService<CacheMaker>();
             builder.Services.AddHostedService<FlagChecker>();
