@@ -97,8 +97,12 @@ jobs:
               echo "Skipping missing branch: $b"
             fi
           done
-          # Emit as JSON array
-          printf 'branches=%s\n' "$(printf '%s\n' "${EXISTING[@]}" | jq -R . | jq -s .)" >> "$GITHUB_OUTPUT"
+          # Emit as JSON array (handle empty case)
+          if [ ${#EXISTING[@]} -eq 0 ]; then
+            echo 'branches=[]' >> "$GITHUB_OUTPUT"
+          else
+            printf 'branches=%s\n' "$(printf '%s\n' "${EXISTING[@]}" | jq -R . | jq -s .)" >> "$GITHUB_OUTPUT"
+          fi
 
   sync-features:
     needs: discover
