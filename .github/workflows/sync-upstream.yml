@@ -1,0 +1,123 @@
+name: Sync Upstream & Features
+
+# Keeps YOUR fork in sync with the original author (upstream) while
+# preserving your custom feature branches.
+#
+# Strategy:
+#   1. sync-main      -> fast-forwards your `main` to upstream/main (no custom code here)
+#   2. sync-features  -> opens/updates a PR that merges upstream/main into each feature branch
+#
+# Required repo secret (Settings > Secrets > Actions):
+#   GH_PAT  -> a Personal Access Token with `repo` scope (for cross-repo PRs)
+
+on:
+  schedule:
+    # Run daily at 03:17 UTC. Adjust or disable as needed.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      feature_branches:
+        description: "Comma-separated feature branches to sync (e.g. my-feature,team-mode)"
+        required: false
+        default: "my-feature"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  UPSTREAM_REPO: GZTimeWalker/GZCTF
+  BASE_BRANCH: main
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Keep your `main` a clean mirror of upstream/main
+  # ---------------------------------------------------------------------------
+  sync-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout your fork
+        uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          ref: ${{ env.BASE_BRANCH }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: git remote add upstream https://github.com/${{ env.UPSTREAM_REPO }}.git
+
+      - name: Fetch upstream
+        run: git fetch upstream --tags
+
+      - name: Fast-forward main to upstream/main
+        run: |
+          git merge --ff-only upstream/${{ env.BASE_BRANCH }}
+          git push origin ${{ env.BASE_BRANCH }}
+
+  # ---------------------------------------------------------------------------
+  # 2. Bring upstream changes into your feature branches via PRs
+  # ---------------------------------------------------------------------------
+  sync-features:
+    needs: sync-main
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Default branch; override via workflow_dispatch input
+        branch: ${{ fromJSON(format('["{0}"]', inputs.feature_branches || 'my-feature')) }}
+    steps:
+      - name: Checkout your fork
+        uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          ref: ${{ matrix.branch }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: git remote add upstream https://github.com/${{ env.UPSTREAM_REPO }}.git
+
+      - name: Fetch all
+        run: git fetch upstream --tags && git fetch origin
+
+      - name: Test merge (detect conflicts early)
+        id: test
+        run: |
+          if git merge --no-commit --no-ff upstream/${{ env.BASE_BRANCH }}; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+            git merge --abort || true
+          else
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+            git merge --abort || true
+          fi
+
+      - name: Open or update sync PR
+        if: steps.test.outputs.conflict == 'false'
+        uses: repo-sync/pull-request@v2
+        with:
+          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          source_branch: ${{ env.BASE_BRANCH }}
+          destination_branch: ${{ matrix.branch }}
+          pr_title: "⬆️ Sync upstream/${{ env.BASE_BRANCH }} into ${{ matrix.branch }}"
+          pr_body: |
+            Automated sync of the original author's updates (`${{ env.UPSTREAM_REPO }}@${{ env.BASE_BRANCH }}`)
+            into your feature branch `${{ matrix.branch }}`.
+
+            This PR is created/updated by the `sync-upstream.yml` workflow.
+            Review the changes, then merge (prefer **rebase** or **squash** to keep history clean).
+          pr_label: "sync-upstream"
+
+      - name: Report conflict
+        if: steps.test.outputs.conflict == 'true'
+        run: |
+          echo "::error::Merge conflict detected when syncing upstream into ${{ matrix.branch }}."
+          echo "Resolve manually: git checkout ${{ matrix.branch }}; git fetch upstream; git merge upstream/${{ env.BASE_BRANCH }}"
