@@ -96,7 +96,18 @@ jobs:
       - name: Fetch all
         run: git fetch upstream --tags && git fetch origin
 
+      - name: Skip if feature branch missing
+        id: exists
+        run: |
+          if git show-ref --verify --quiet "refs/remotes/origin/${{ matrix.branch }}"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Branch ${{ matrix.branch }} does not exist on origin; skipping."
+          fi
+
       - name: Test merge (detect conflicts early)
+        if: steps.exists.outputs.exists == 'true'
         id: test
         run: |
           if git merge --no-commit --no-ff upstream/${{ env.BASE_BRANCH }}; then
@@ -108,7 +119,7 @@ jobs:
           fi
 
       - name: Open or update sync PR
-        if: steps.test.outputs.conflict == 'false'
+        if: steps.exists.outputs.exists == 'true' && steps.test.outputs.conflict == 'false'
         uses: repo-sync/pull-request@v2
         with:
           token: ${{ secrets.GH_PAT }}
@@ -124,7 +135,7 @@ jobs:
           pr_label: "sync-upstream"
 
       - name: Report conflict
-        if: steps.test.outputs.conflict == 'true'
+        if: steps.exists.outputs.exists == 'true' && steps.test.outputs.conflict == 'true'
         run: |
           echo "::error::Merge conflict detected when syncing upstream into ${{ matrix.branch }}."
           echo "Resolve manually: git checkout ${{ matrix.branch }}; git fetch upstream; git merge upstream/${{ env.BASE_BRANCH }}"
