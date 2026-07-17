@@ -15,8 +15,6 @@ import {
   Stack,
   Switch,
   TextInput,
-  PasswordInput,
-  Select,
   Title,
   useMantineTheme,
   ActionIcon,
