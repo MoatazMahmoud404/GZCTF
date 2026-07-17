@@ -67,16 +67,47 @@ jobs:
           fi
 
   # ---------------------------------------------------------------------------
-  # 2. Bring upstream changes into your feature branches via PRs
+  # 2. Discover which feature branches actually exist, then sync each
   # ---------------------------------------------------------------------------
-  sync-features:
+  discover:
     needs: sync-main
+    runs-on: ubuntu-latest
+    outputs:
+      branches: ${{ steps.list.outputs.branches }}
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.GH_PAT }}
+          fetch-depth: 0
+
+      - name: List existing feature branches
+        id: list
+        run: |
+          # Comma-separated input, or default to "my-feature"
+          INPUT="${{ inputs.feature_branches || 'my-feature' }}"
+          IFS=',' read -ra REQUESTED <<< "$INPUT"
+          EXISTING=()
+          for b in "${REQUESTED[@]}"; do
+            b=$(echo "$b" | xargs)   # trim whitespace
+            if git show-ref --verify --quiet "refs/remotes/origin/$b"; then
+              EXISTING+=("$b")
+              echo "Found feature branch: $b"
+            else
+              echo "Skipping missing branch: $b"
+            fi
+          done
+          # Emit as JSON array
+          printf 'branches=%s\n' "$(printf '%s\n' "${EXISTING[@]}" | jq -R . | jq -s .)" >> "$GITHUB_OUTPUT"
+
+  sync-features:
+    needs: discover
+    if: ${{ needs.discover.outputs.branches != '[]' && needs.discover.outputs.branches != '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # Default branch; override via workflow_dispatch input
-        branch: ${{ fromJSON(format('["{0}"]', inputs.feature_branches || 'my-feature')) }}
+        branch: ${{ fromJSON(needs.discover.outputs.branches) }}
     steps:
       - name: Checkout your fork
         uses: actions/checkout@v7
@@ -96,18 +127,7 @@ jobs:
       - name: Fetch all
         run: git fetch upstream --tags && git fetch origin
 
-      - name: Skip if feature branch missing
-        id: exists
-        run: |
-          if git show-ref --verify --quiet "refs/remotes/origin/${{ matrix.branch }}"; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "Branch ${{ matrix.branch }} does not exist on origin; skipping."
-          fi
-
       - name: Test merge (detect conflicts early)
-        if: steps.exists.outputs.exists == 'true'
         id: test
         run: |
           if git merge --no-commit --no-ff upstream/${{ env.BASE_BRANCH }}; then
@@ -119,7 +139,7 @@ jobs:
           fi
 
       - name: Open or update sync PR
-        if: steps.exists.outputs.exists == 'true' && steps.test.outputs.conflict == 'false'
+        if: steps.test.outputs.conflict == 'false'
         uses: repo-sync/pull-request@v2
         with:
           token: ${{ secrets.GH_PAT }}
@@ -135,7 +155,7 @@ jobs:
           pr_label: "sync-upstream"
 
       - name: Report conflict
-        if: steps.exists.outputs.exists == 'true' && steps.test.outputs.conflict == 'true'
+        if: steps.test.outputs.conflict == 'true'
         run: |
           echo "::error::Merge conflict detected when syncing upstream into ${{ matrix.branch }}."
           echo "Resolve manually: git checkout ${{ matrix.branch }}; git fetch upstream; git merge upstream/${{ env.BASE_BRANCH }}"
