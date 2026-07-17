@@ -444,6 +444,15 @@ const GameChallengeEdit: FC = () => {
                 )}
                 onChange={(e) => setChallengeInfo({ ...challengeInfo, disableBloodBonus: !e.target.checked })}
               />
+              <Switch
+                disabled={disabled}
+                checked={challengeInfo?.aiHintsEnabled ?? false}
+                label={SwitchLabel(
+                  t('admin.content.games.challenges.ai_hints.label'),
+                  t('admin.content.games.challenges.ai_hints.description')
+                )}
+                onChange={(e) => setChallengeInfo({ ...challengeInfo, aiHintsEnabled: e.target.checked })}
+              />
             </Stack>
           </Grid.Col>
           <Grid.Col span={1}>

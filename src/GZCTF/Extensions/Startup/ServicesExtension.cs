@@ -98,6 +98,7 @@ internal static class ServicesExtension
             builder.Services.AddSingleton<IAIProvider, OpenAiCompatibleProvider>();
             builder.Services.AddSingleton<ContextAssembler>();
             builder.Services.AddSingleton<AiResponseParser>();
+            builder.Services.AddScoped<AiHintService>();
 
             builder.Services.AddHostedService<CacheMaker>();
             builder.Services.AddHostedService<FlagChecker>();

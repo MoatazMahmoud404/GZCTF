@@ -100,6 +100,10 @@
           "description": "启用题目的三血加分",
           "label": "三血奖励"
         },
+        "ai_hints": {
+          "description": "Allow players to request AI-generated contextual hints for this challenge",
+          "label": "AI Hints"
+        },
         "bonus": {
           "description": "三血奖励加成是指当一个题目被前三个队伍解出时，每个队伍可以得到的分值奖励。三血的奖励基于题目的当前分值，并以一个固定百分比的形式累加至该队伍的得分中。",
           "first_blood": "一血奖励 (%)",
@@ -385,6 +389,49 @@
           "label": "续期窗口（分钟）"
         },
         "title": "容器策略"
+      },
+      "ai": {
+        "title": "AI Configuration",
+        "enabled": {
+          "description": "Enable AI features (hints, grading) globally",
+          "label": "Enable AI Features"
+        },
+        "log_requests": {
+          "description": "Log all AI requests and responses for auditing",
+          "label": "Log AI Requests"
+        },
+        "max_hints": {
+          "description": "Maximum number of AI hints allowed per challenge",
+          "label": "Max Hints per Challenge"
+        },
+        "cooldown": {
+          "description": "Cooldown between hint requests per team (seconds)",
+          "label": "Hint Cooldown (s)"
+        },
+        "provider": {
+          "description": "AI provider type",
+          "label": "Provider"
+        },
+        "base_url": {
+          "description": "Base URL of the AI API endpoint",
+          "label": "Base URL"
+        },
+        "api_key": {
+          "description": "API key for authentication",
+          "label": "API Key"
+        },
+        "model": {
+          "description": "Model name to use for generation",
+          "label": "Model"
+        },
+        "temperature": {
+          "description": "Temperature for generation (0.0 - 2.0)",
+          "label": "Temperature"
+        },
+        "max_tokens": {
+          "description": "Maximum tokens to generate",
+          "label": "Max Tokens"
+        }
       },
       "platform": {
         "api_encryption": {

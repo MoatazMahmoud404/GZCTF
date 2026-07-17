@@ -106,6 +106,11 @@ public class ChallengeUpdateModel
     public bool? DisableBloodBonus { get; set; }
 
     /// <summary>
+    /// Whether AI-generated hints are enabled for this challenge
+    /// </summary>
+    public bool? AiHintsEnabled { get; set; }
+
+    /// <summary>
     /// Initial score
     /// </summary>
     public int? OriginalScore { get; set; }

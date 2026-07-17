@@ -33,6 +33,11 @@ public class ChallengeDetailModel
     public List<string>? Hints { get; set; }
 
     /// <summary>
+    /// Whether AI-generated hints are enabled for this challenge
+    /// </summary>
+    public bool AiHintsEnabled { get; set; }
+
+    /// <summary>
     /// Current score of the challenge
     /// </summary>
     public int Score { get; set; }
@@ -69,6 +74,7 @@ public class ChallengeDetailModel
             Id = gameInstance.Challenge.Id,
             Content = gameInstance.Challenge.Content,
             Hints = gameInstance.Challenge.Hints,
+            AiHintsEnabled = gameInstance.Challenge.AiHintsEnabled,
             Score = scoreboardChallenge?.Score ?? gameInstance.Challenge.CurrentScore,
             Category = gameInstance.Challenge.Category,
             Title = gameInstance.Challenge.Title,

@@ -10,6 +10,7 @@ using GZCTF.Models.Internal;
 using GZCTF.Models.Request.Admin;
 using GZCTF.Models.Request.Game;
 using GZCTF.Repositories.Interface;
+using GZCTF.Services.AI;
 using GZCTF.Services.Cache;
 using GZCTF.Services.Config;
 using GZCTF.Storage.Interface;
@@ -52,6 +53,7 @@ public class GameController(
     IGameInstanceRepository gameInstanceRepository,
     IParticipationRepository participationRepository,
     IOptionsSnapshot<ContainerPolicy> containerPolicy,
+    AiHintService aiHintService,
     IStringLocalizer<Program> localizer) : ControllerBase
 {
     /// <summary>
@@ -945,6 +947,92 @@ public class GameController(
         var attempts = await submissionRepository.CountSubmissions(context.Participation!.Id, challengeId, token);
 
         return Ok(ChallengeDetailModel.FromInstance(instance, attempts, scoreboardChallenge));
+    }
+
+    /// <summary>
+    /// Request an AI-generated hint for a challenge
+    /// </summary>
+    /// <remarks>
+    /// Generates a contextual hint based on the player's progress. Requires User permission
+    /// and active team participation. Subject to AI hint budget and cooldown limits.
+    /// </remarks>
+    /// <param name="id">Game ID</param>
+    /// <param name="challengeId">Challenge ID</param>
+    /// <param name="token"></param>
+    /// <response code="200">Successfully generated hint</response>
+    /// <response code="400">AI hints not available or budget exhausted</response>
+    /// <response code="404">Game or challenge not found</response>
+    [RequireUser]
+    [HttpPost("{id:int}/Challenges/{challengeId:int}/AiHint")]
+    [EnableRateLimiting(nameof(RateLimiter.LimitPolicy.Submit))]
+    [ProducesResponseType(typeof(AiHintResponseModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RequestAiHint([FromRoute] int id, [FromRoute] int challengeId,
+        CancellationToken token)
+    {
+        if (id <= 0 || challengeId <= 0)
+            return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Challenge_NotFound)],
+                StatusCodes.Status404NotFound));
+
+        var context = await GetContextInfo(id, token: token);
+
+        if (context.Result is not null)
+            return context.Result;
+
+        var permission = await divisionRepository.GetPermission(context.Participation?.DivisionId, challengeId, token);
+
+        if (!permission.HasFlag(GamePermission.ViewChallenge))
+            return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Challenge_NotFound)],
+                StatusCodes.Status404NotFound));
+
+        var challenge = await challengeRepository.GetChallenge(challengeId, token);
+
+        if (challenge is null)
+            return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_ChallengeNotFound)],
+                StatusCodes.Status404NotFound));
+
+        if (!aiHintService.IsEnabled)
+            return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Ai_NotEnabled)],
+                StatusCodes.Status400BadRequest));
+
+        if (!challenge.AiHintsEnabled)
+            return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Ai_HintsDisabled)],
+                StatusCodes.Status400BadRequest));
+
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+            return Unauthorized(new RequestResponse(localizer[nameof(Resources.Program.Account_NotFound)],
+                StatusCodes.Status401Unauthorized));
+
+        // Get player progress context
+        var attempts = await submissionRepository.CountSubmissions(context.Participation!.Id, challengeId, token);
+        var playerProgress = attempts > 0
+            ? $"Player has made {attempts} submission(s) to this challenge so far."
+            : "Player has not made any submissions yet.";
+
+        var result = await aiHintService.GenerateHintAsync(
+            challenge: challenge,
+            participationId: context.Participation.Id,
+            userId: user.Id,
+            playerProgress: playerProgress,
+            ct: token);
+
+        if (!result.IsSuccess)
+            return BadRequest(new RequestResponse(result.Error ?? "Failed to generate hint",
+                StatusCodes.Status400BadRequest));
+
+        var usedCount = await aiHintService.GetHintCountAsync(challengeId, context.Participation.Id, token);
+        var budget = aiHintService.GetBudget(challenge);
+
+        return Ok(new AiHintResponseModel
+        {
+            Hint = result.Hint!,
+            Progression = result.Progression,
+            Type = result.Type!,
+            UsedCount = usedCount,
+            Budget = budget
+        });
     }
 
     /// <summary>

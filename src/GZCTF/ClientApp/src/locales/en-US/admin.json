@@ -100,6 +100,10 @@
           "description": "Enable blood bonus for this challenge",
           "label": "Blood Bonus"
         },
+        "ai_hints": {
+          "description": "Allow players to request AI-generated contextual hints for this challenge",
+          "label": "AI Hints"
+        },
         "bonus": {
           "description": "The Triple Blood Bonus refers to the additional points awarded when a challenge is solved by the first three teams. Each team can receive a scoring bonus based on the current points of the challenge. The bonus will be added to the team's score in the form of a fixed percentage.",
           "first_blood": "First Blood Reward (%)",
