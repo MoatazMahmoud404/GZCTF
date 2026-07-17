@@ -4,6 +4,7 @@ using GZCTF.Models.Internal;
 using GZCTF.Repositories;
 using GZCTF.Repositories.Interface;
 using GZCTF.Services;
+using GZCTF.Services.AI;
 using GZCTF.Services.Cache;
 using GZCTF.Services.Config;
 using GZCTF.Services.Container;
@@ -33,6 +34,7 @@ internal static class ServicesExtension
             builder.AddConfig<ManagedConfig>();
             builder.AddConfig<ContainerPolicy>();
             builder.AddConfig<ContainerProvider>();
+            builder.AddConfig<AiGlobalConfig>();
 
             builder.Services.Configure<RegistrySet<RegistryConfig>>(builder.Configuration.GetSection("Registries"));
 
@@ -91,6 +93,13 @@ internal static class ServicesExtension
             builder.Services.AddSingleton<CacheHelper>();
             builder.Services.AddSingleton<IMailSender, MailSender>();
             builder.Services.AddSingleton<TrafficRecorderRegistry>();
+
+            // AI Services
+            // Registered as Scoped because OpenAiCompatibleProvider consumes the scoped
+            // IOptionsSnapshot<AiGlobalConfig>; a Singleton cannot consume a scoped service.
+            builder.Services.AddScoped<IAIProvider, OpenAiCompatibleProvider>();
+            builder.Services.AddScoped<ContextAssembler>();
+            builder.Services.AddScoped<AiResponseParser>();
 
             builder.Services.AddHostedService<CacheMaker>();
             builder.Services.AddHostedService<FlagChecker>();

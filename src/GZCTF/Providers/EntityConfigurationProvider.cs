@@ -33,6 +33,7 @@ public class EntityConfigurationProvider(EntityConfigurationSource source) : Con
         configs.UnionWith(ConfigService.GetConfigs(new GlobalConfig()));
         configs.UnionWith(ConfigService.GetConfigs(new ContainerPolicy()));
         configs.UnionWith(ConfigService.GetConfigs(new ManagedConfig()));
+        configs.UnionWith(ConfigService.GetConfigs(new AiGlobalConfig()));
 
         return configs;
     }
