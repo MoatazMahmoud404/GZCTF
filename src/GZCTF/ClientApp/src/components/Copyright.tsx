@@ -20,6 +20,8 @@ export const Copyright: FC<CopyrightProps> = ({ isMobile }) => {
         @GZTimeWalker
       </Anchor>
       ,&nbsp;All&nbsp;Rights&nbsp;Reserved.
+      <br />
+      Deployed&nbsp;with&nbsp;❤️&nbsp;by&nbsp;0xReDrag0n
     </Text>
   )
 }

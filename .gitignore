@@ -240,6 +240,13 @@ docs
 DOCS/
 .docs
 
+scripts
+compose.yml
+
+challenge-base
+challenges
+GZCTF-Challenges
+
 **/appsettings.json
 **/appsettings.*.json
 !**/appsettings.Template.json
