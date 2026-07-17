@@ -1,0 +1,106 @@
+name: Deploy Challenges to VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: "Deploy scope"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - single
+      challenge_name:
+        description: "Challenge folder name under challenges/{easy,medium,hard}"
+        required: false
+        default: ""
+      target_branch:
+        description: "Git ref to deploy from"
+        required: false
+        default: "develop"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.target_branch }}
+
+      - name: Validate inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.scope }}" = "single" ] && [ -z "${{ inputs.challenge_name }}" ]; then
+            echo "challenge_name is required when scope=single" >&2
+            exit 1
+          fi
+
+          if [ "${{ inputs.scope }}" = "single" ]; then
+            if ! find challenges -type f -path "*/${{ inputs.challenge_name }}/build/Dockerfile" | grep -q .; then
+              echo "Challenge '${{ inputs.challenge_name }}' was not found under challenges/*/" >&2
+              exit 1
+            fi
+          fi
+
+      - name: Prepare challenge sync payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f challenges.tgz
+          if [ "${{ inputs.scope }}" = "all" ]; then
+            tar -czf challenges.tgz challenges
+          else
+            challenge_path=$(find challenges -type f -path "*/${{ inputs.challenge_name }}/build/Dockerfile" | head -n 1 | xargs dirname | xargs dirname)
+            tar -czf challenges.tgz "$challenge_path"
+          fi
+
+      - name: Copy challenges to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: challenges.tgz
+          target: /tmp/gzctf-challenges/
+
+      - name: Build and refresh challenge images on VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /home/azureuser/gzctf
+            tar -xzf /tmp/gzctf-challenges/challenges.tgz -C /home/azureuser/gzctf
+
+            build_one() {
+              local build_dir="$1"
+              local challenge_name="$2"
+              echo "========================================"
+              echo "Building ${challenge_name} from ${build_dir}"
+              docker build -t "${challenge_name}:latest" "${build_dir}"
+            }
+
+            if [ "${{ inputs.scope }}" = "all" ]; then
+              find /home/azureuser/gzctf/challenges -type f -name Dockerfile | sort | while read -r dockerfile; do
+                build_dir="$(dirname "$dockerfile")"
+                challenge_name="$(basename "$(dirname "$build_dir")")"
+                build_one "$build_dir" "$challenge_name"
+              done
+            else
+              find /home/azureuser/gzctf/challenges -type f -path "*/${{ inputs.challenge_name }}/build/Dockerfile" | sort | while read -r dockerfile; do
+                build_dir="$(dirname "$dockerfile")"
+                challenge_name="$(basename "$(dirname "$build_dir")")"
+                build_one "$build_dir" "$challenge_name"
+              done
+            fi
+
+            echo "========================================"
+            echo "Challenge deployment complete"

@@ -470,6 +470,20 @@ export interface AiGlobalConfig {
   logAiRequests?: boolean;
 }
 
+/** AI hint response */
+export interface AiHintResponseModel {
+  /** The generated hint text */
+  hint?: string;
+  /** Progression level (1-5) */
+  progression?: number;
+  /** Hint type (tooling, technique, concept, direction) */
+  type?: string;
+  /** Number of hints used so far */
+  usedCount?: number;
+  /** Total hint budget for this challenge */
+  budget?: number;
+}
+
 /** List response */
 export interface ArrayResponseOfUserInfoModel {
   /** Data */
@@ -1218,6 +1232,10 @@ export interface ChallengeEditDetailModel {
   /** Whether to disable blood bonus */
   disableBloodBonus?: boolean | null;
   /**
+   * Whether AI-generated hints are enabled for this challenge
+   */
+  aiHintsEnabled?: boolean | null;
+  /**
    * The deadline of the challenge, null means no deadline
    * @format uint64
    */
@@ -1398,6 +1416,8 @@ export interface ChallengeUpdateModel {
   enableTrafficCapture?: boolean | null;
   /** Is blood bonus disabled (enable by default) */
   disableBloodBonus?: boolean | null;
+  /** Whether AI-generated hints are enabled for this challenge */
+  aiHintsEnabled?: boolean | null;
   /**
    * Initial score
    * @format int32
@@ -2022,6 +2042,8 @@ export interface ChallengeDetailModel {
   category?: ChallengeCategory;
   /** Challenge hints */
   hints?: string[] | null;
+  /** Whether AI hints are enabled for this challenge */
+  aiHintsEnabled?: boolean;
   /**
    * Current score of the challenge
    * @format int32
@@ -4531,6 +4553,22 @@ export class Api<
       data?: GameDetailModel | Promise<GameDetailModel>,
       options?: MutatorOptions,
     ) => mutate<GameDetailModel>(`/api/game/${id}/details`, data, options),
+
+    /**
+     * @description Generates a contextual hint based on the player's progress. Requires User permission and active team participation.
+     *
+     * @tags Game
+     * @name GameRequestAiHint
+     * @summary Request an AI-generated hint for a challenge
+     * @request POST:/api/game/{id}/challenges/{challengeId}/aihint
+     */
+    gameRequestAiHint: (id: number, challengeId: number, params: RequestParams = {}) =>
+      this.request<AiHintResponseModel, RequestResponse>({
+        path: `/api/game/${id}/challenges/${challengeId}/aihint`,
+        method: "POST",
+        format: "json",
+        ...params,
+      }),
 
     /**
      * @description Retrieves game cheat data; requires Monitor permission

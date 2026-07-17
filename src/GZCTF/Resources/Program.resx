@@ -293,6 +293,12 @@
   <data name="Challenge_NotFound" xml:space="preserve">
     <value>The challenge was not found</value>
   </data>
+  <data name="Ai_NotEnabled" xml:space="preserve">
+    <value>AI features are not enabled on this platform</value>
+  </data>
+  <data name="Ai_HintsDisabled" xml:space="preserve">
+    <value>AI hints are not enabled for this challenge</value>
+  </data>
   <data name="Config_GlobalConfigAdded" xml:space="preserve">
     <value>Global configuration added: {0} =&gt; {1}</value>
   </data>

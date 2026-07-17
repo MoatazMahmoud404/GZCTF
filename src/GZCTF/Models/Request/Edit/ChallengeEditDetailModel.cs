@@ -126,6 +126,11 @@ public class ChallengeEditDetailModel
     public bool? DisableBloodBonus { get; set; } = false;
 
     /// <summary>
+    /// Whether AI-generated hints are enabled for this challenge
+    /// </summary>
+    public bool? AiHintsEnabled { get; set; } = false;
+
+    /// <summary>
     /// The deadline of the challenge, null means no deadline
     /// </summary>
     public DateTimeOffset? DeadlineUtc { get; set; }
@@ -174,6 +179,7 @@ public class ChallengeEditDetailModel
             NetworkMode = chal.NetworkMode,
             EnableTrafficCapture = chal.EnableTrafficCapture,
             DisableBloodBonus = chal.DisableBloodBonus,
+            AiHintsEnabled = chal.AiHintsEnabled,
             OriginalScore = chal.OriginalScore,
             MinScoreRate = chal.MinScoreRate,
             Difficulty = chal.Difficulty,

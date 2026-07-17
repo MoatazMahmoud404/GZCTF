@@ -15,6 +15,8 @@ import {
   Stack,
   Switch,
   TextInput,
+  PasswordInput,
+  Select,
   Title,
   useMantineTheme,
   ActionIcon,
@@ -398,7 +400,7 @@ const Configs: FC = () => {
         <Stack gap="sm">
           <Title order={2}>{t('admin.content.settings.ai.title')}</Title>
           <Divider />
-          <SimpleGrid cols={4}>
+          <SimpleGrid cols={4} className={misc.alignCenter}
             <Switch
               checked={aiConfig?.enabled ?? false}
               disabled={disabled}
@@ -414,7 +416,7 @@ const Configs: FC = () => {
               }
             />
             <Switch
-              checked={aiConfig?.logAiRequests ?? true}
+              checked={aiConfig?.logAiRequests ?? false}
               disabled={disabled}
               label={SwitchLabel(
                 t('admin.content.settings.ai.log_requests.label'),
@@ -456,18 +458,20 @@ const Configs: FC = () => {
               }}
             />
           </SimpleGrid>
-          <SimpleGrid cols={2}>
+          <SimpleGrid cols={3}>
             <Select
               label={t('admin.content.settings.ai.provider.label')}
               description={t('admin.content.settings.ai.provider.description')}
-              placeholder="OpenAI Compatible"
-              disabled={disabled}
               data={Object.values(AiProviderType).map((v) => ({ value: v, label: v }))}
+              disabled={disabled}
               value={aiConfig?.provider?.provider ?? AiProviderType.OpenAiCompatible}
               onChange={(v) =>
                 setAiConfig({
                   ...aiConfig,
-                  provider: { ...aiConfig?.provider, provider: v as AiProviderType },
+                  provider: {
+                    ...aiConfig?.provider,
+                    provider: (v as AiProviderType) ?? AiProviderType.OpenAiCompatible,
+                  },
                 })
               }
             />
@@ -530,7 +534,7 @@ const Configs: FC = () => {
               description={t('admin.content.settings.ai.max_tokens.description')}
               placeholder="4096"
               min={1}
-              max={128000}
+              max={32768}
               disabled={disabled}
               value={aiConfig?.provider?.maxTokens ?? 4096}
               onChange={(e) => {

@@ -100,6 +100,10 @@
           "description": "이 문제의 blood 보너스를 활성화합니다",
           "label": "Blood 보너스"
         },
+        "ai_hints": {
+          "description": "Allow players to request AI-generated contextual hints for this challenge",
+          "label": "AI Hints"
+        },
         "bonus": {
           "description": "Triple Blood Bonus는 문제을 해결한 첫 세 팀에게 추가로 주어지는 점수를 의미합니다. 각 팀은 문제의 현재 점수를 기준으로 보너스를 받을 수 있습니다. 이 보너스는 고정된 비율로 팀의 점수에 추가됩니다.",
           "first_blood": "First Blood 보상 (%)",
@@ -385,6 +389,49 @@
           "label": "창 새로고침 (분)"
         },
         "title": "컨테이너 정책"
+      },
+      "ai": {
+        "title": "AI Configuration",
+        "enabled": {
+          "description": "Enable AI features (hints, grading) globally",
+          "label": "Enable AI Features"
+        },
+        "log_requests": {
+          "description": "Log all AI requests and responses for auditing",
+          "label": "Log AI Requests"
+        },
+        "max_hints": {
+          "description": "Maximum number of AI hints allowed per challenge",
+          "label": "Max Hints per Challenge"
+        },
+        "cooldown": {
+          "description": "Cooldown between hint requests per team (seconds)",
+          "label": "Hint Cooldown (s)"
+        },
+        "provider": {
+          "description": "AI provider type",
+          "label": "Provider"
+        },
+        "base_url": {
+          "description": "Base URL of the AI API endpoint",
+          "label": "Base URL"
+        },
+        "api_key": {
+          "description": "API key for authentication",
+          "label": "API Key"
+        },
+        "model": {
+          "description": "Model name to use for generation",
+          "label": "Model"
+        },
+        "temperature": {
+          "description": "Temperature for generation (0.0 - 2.0)",
+          "label": "Temperature"
+        },
+        "max_tokens": {
+          "description": "Maximum tokens to generate",
+          "label": "Max Tokens"
+        }
       },
       "platform": {
         "api_encryption": {

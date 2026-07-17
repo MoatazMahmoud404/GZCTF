@@ -45,6 +45,17 @@ public class Challenge
     public List<string>? Hints { get; set; }
 
     /// <summary>
+    /// Whether AI-generated hints are enabled for this challenge
+    /// </summary>
+    public bool AiHintsEnabled { get; set; }
+
+    /// <summary>
+    /// Maximum number of AI hints allowed for this challenge (0 = use global default)
+    /// </summary>
+    [Range(0, 20)]
+    public int AiHintBudget { get; set; }
+
+    /// <summary>
     /// Whether the challenge is enabled
     /// </summary>
     public bool IsEnabled { get; set; }
