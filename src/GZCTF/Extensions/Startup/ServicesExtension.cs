@@ -4,6 +4,7 @@ using GZCTF.Models.Internal;
 using GZCTF.Repositories;
 using GZCTF.Repositories.Interface;
 using GZCTF.Services;
+using GZCTF.Services.AI;
 using GZCTF.Services.Cache;
 using GZCTF.Services.Config;
 using GZCTF.Services.Container;
@@ -33,6 +34,7 @@ internal static class ServicesExtension
             builder.AddConfig<ManagedConfig>();
             builder.AddConfig<ContainerPolicy>();
             builder.AddConfig<ContainerProvider>();
+            builder.AddConfig<AiGlobalConfig>();
 
             builder.Services.Configure<RegistrySet<RegistryConfig>>(builder.Configuration.GetSection("Registries"));
 
@@ -91,6 +93,11 @@ internal static class ServicesExtension
             builder.Services.AddSingleton<CacheHelper>();
             builder.Services.AddSingleton<IMailSender, MailSender>();
             builder.Services.AddSingleton<TrafficRecorderRegistry>();
+
+            // AI Services
+            builder.Services.AddSingleton<IAIProvider, OpenAiCompatibleProvider>();
+            builder.Services.AddSingleton<ContextAssembler>();
+            builder.Services.AddSingleton<AiResponseParser>();
 
             builder.Services.AddHostedService<CacheMaker>();
             builder.Services.AddHostedService<FlagChecker>();

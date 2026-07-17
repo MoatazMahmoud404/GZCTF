@@ -358,6 +358,8 @@ export interface ConfigEditModel {
   globalConfig?: GlobalConfig | null;
   /** Game policy */
   containerPolicy?: ContainerPolicy | null;
+  /** AI configuration */
+  aiGlobalConfig?: AiGlobalConfig | null;
 }
 
 /** Account policy */
@@ -424,6 +426,48 @@ export interface ContainerPolicy {
    * @max 360
    */
   renewalWindow?: number;
+}
+
+/** AI provider type */
+export enum AiProviderType {
+  OpenAiCompatible = 'OpenAiCompatible',
+  Anthropic = 'Anthropic',
+  Gemini = 'Gemini',
+  Ollama = 'Ollama',
+  OpenRouter = 'OpenRouter',
+  Custom = 'Custom',
+}
+
+/** AI provider configuration */
+export interface AiProviderConfig {
+  /** AI provider type */
+  provider?: AiProviderType;
+  /** Base URL of the AI API endpoint */
+  baseUrl?: string;
+  /** API key for authentication */
+  apiKey?: string;
+  /** Model name to use */
+  model?: string;
+  /** Temperature for generation (0.0 - 2.0) */
+  temperature?: number;
+  /** Maximum tokens to generate */
+  maxTokens?: number;
+  /** Request timeout in seconds */
+  timeoutSeconds?: number;
+}
+
+/** AI settings */
+export interface AiGlobalConfig {
+  /** Whether AI features are enabled globally */
+  enabled?: boolean;
+  /** Default provider configuration */
+  provider?: AiProviderConfig | null;
+  /** Maximum hint budget per challenge (number of AI hints allowed) */
+  maxHintsPerChallenge?: number;
+  /** Cooldown between hint requests per team in seconds */
+  hintCooldownSeconds?: number;
+  /** Whether to log all AI requests and responses for auditing */
+  logAiRequests?: boolean;
 }
 
 /** List response */

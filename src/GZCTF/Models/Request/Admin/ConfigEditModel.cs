@@ -21,4 +21,9 @@ public class ConfigEditModel
     /// Game policy
     /// </summary>
     public ContainerPolicy? ContainerPolicy { get; set; }
+
+    /// <summary>
+    /// AI configuration
+    /// </summary>
+    public AiGlobalConfig? AiGlobalConfig { get; set; }
 }

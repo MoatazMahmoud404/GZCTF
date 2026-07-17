@@ -9,6 +9,8 @@ import {
   Text,
   InputBase,
   NumberInput,
+  PasswordInput,
+  Select,
   SimpleGrid,
   Stack,
   Switch,
@@ -30,7 +32,7 @@ import { webCryptoAvailable } from '@Utils/Crypto'
 import { getInputNumber, showErrorMsg } from '@Utils/Shared'
 import { IMAGE_MIME_TYPES } from '@Utils/Shared'
 import { OnceSWRConfig, useCaptchaConfig, useConfig } from '@Hooks/useConfig'
-import api, { AccountPolicy, ConfigEditModel, ContainerPolicy, GlobalConfig } from '@Api'
+import api, { AccountPolicy, AiGlobalConfig, AiProviderType, ConfigEditModel, ContainerPolicy, GlobalConfig } from '@Api'
 import misc from '@Styles/Misc.module.css'
 
 const Configs: FC = () => {
@@ -42,6 +44,7 @@ const Configs: FC = () => {
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig | null>()
   const [accountPolicy, setAccountPolicy] = useState<AccountPolicy | null>()
   const [containerPolicy, setContainerPolicy] = useState<ContainerPolicy | null>()
+  const [aiConfig, setAiConfig] = useState<AiGlobalConfig | null>()
   const [color, setColor] = useState<string | undefined | null>(globalConfig?.customTheme)
   const [logoFile, setLogoFile] = useState<File | null>(null)
 
@@ -55,6 +58,7 @@ const Configs: FC = () => {
       setContainerPolicy(configs.containerPolicy)
       setGlobalConfig(configs.globalConfig)
       setAccountPolicy(configs.accountPolicy)
+      setAiConfig(configs.aiGlobalConfig)
       setColor(configs.globalConfig?.customTheme)
     }
   }, [configs])
@@ -114,6 +118,7 @@ const Configs: FC = () => {
             },
             accountPolicy,
             containerPolicy,
+            aiGlobalConfig: aiConfig,
           })
           setSaved(false)
           setTimeout(() => {
@@ -387,6 +392,152 @@ const Configs: FC = () => {
                   autoDestroyOnLimitReached: e.currentTarget.checked,
                 })
               }
+            />
+          </SimpleGrid>
+        </Stack>
+        <Stack gap="sm">
+          <Title order={2}>{t('admin.content.settings.ai.title')}</Title>
+          <Divider />
+          <SimpleGrid cols={4}>
+            <Switch
+              checked={aiConfig?.enabled ?? false}
+              disabled={disabled}
+              label={SwitchLabel(
+                t('admin.content.settings.ai.enabled.label'),
+                t('admin.content.settings.ai.enabled.description')
+              )}
+              onChange={(e) =>
+                setAiConfig({
+                  ...aiConfig,
+                  enabled: e.currentTarget.checked,
+                })
+              }
+            />
+            <Switch
+              checked={aiConfig?.logAiRequests ?? true}
+              disabled={disabled}
+              label={SwitchLabel(
+                t('admin.content.settings.ai.log_requests.label'),
+                t('admin.content.settings.ai.log_requests.description')
+              )}
+              onChange={(e) =>
+                setAiConfig({
+                  ...aiConfig,
+                  logAiRequests: e.currentTarget.checked,
+                })
+              }
+            />
+            <NumberInput
+              label={t('admin.content.settings.ai.max_hints.label')}
+              description={t('admin.content.settings.ai.max_hints.description')}
+              placeholder="3"
+              min={0}
+              max={20}
+              disabled={disabled}
+              value={aiConfig?.maxHintsPerChallenge ?? 3}
+              onChange={(e) => {
+                const number = getInputNumber(e)
+                if (isNaN(number)) return
+                setAiConfig({ ...aiConfig, maxHintsPerChallenge: number })
+              }}
+            />
+            <NumberInput
+              label={t('admin.content.settings.ai.cooldown.label')}
+              description={t('admin.content.settings.ai.cooldown.description')}
+              placeholder="120"
+              min={0}
+              max={3600}
+              disabled={disabled}
+              value={aiConfig?.hintCooldownSeconds ?? 120}
+              onChange={(e) => {
+                const number = getInputNumber(e)
+                if (isNaN(number)) return
+                setAiConfig({ ...aiConfig, hintCooldownSeconds: number })
+              }}
+            />
+          </SimpleGrid>
+          <SimpleGrid cols={2}>
+            <Select
+              label={t('admin.content.settings.ai.provider.label')}
+              description={t('admin.content.settings.ai.provider.description')}
+              placeholder="OpenAI Compatible"
+              disabled={disabled}
+              data={Object.values(AiProviderType).map((v) => ({ value: v, label: v }))}
+              value={aiConfig?.provider?.provider ?? AiProviderType.OpenAiCompatible}
+              onChange={(v) =>
+                setAiConfig({
+                  ...aiConfig,
+                  provider: { ...aiConfig?.provider, provider: v as AiProviderType },
+                })
+              }
+            />
+            <TextInput
+              label={t('admin.content.settings.ai.base_url.label')}
+              description={t('admin.content.settings.ai.base_url.description')}
+              placeholder="https://api.openai.com/v1"
+              disabled={disabled}
+              value={aiConfig?.provider?.baseUrl ?? ''}
+              onChange={(e) =>
+                setAiConfig({
+                  ...aiConfig,
+                  provider: { ...aiConfig?.provider, baseUrl: e.currentTarget.value },
+                })
+              }
+            />
+            <PasswordInput
+              label={t('admin.content.settings.ai.api_key.label')}
+              description={t('admin.content.settings.ai.api_key.description')}
+              placeholder="sk-..."
+              disabled={disabled}
+              value={aiConfig?.provider?.apiKey ?? ''}
+              onChange={(e) =>
+                setAiConfig({
+                  ...aiConfig,
+                  provider: { ...aiConfig?.provider, apiKey: e.currentTarget.value },
+                })
+              }
+            />
+            <TextInput
+              label={t('admin.content.settings.ai.model.label')}
+              description={t('admin.content.settings.ai.model.description')}
+              placeholder="gpt-4o-mini"
+              disabled={disabled}
+              value={aiConfig?.provider?.model ?? ''}
+              onChange={(e) =>
+                setAiConfig({
+                  ...aiConfig,
+                  provider: { ...aiConfig?.provider, model: e.currentTarget.value },
+                })
+              }
+            />
+            <NumberInput
+              label={t('admin.content.settings.ai.temperature.label')}
+              description={t('admin.content.settings.ai.temperature.description')}
+              placeholder="0.7"
+              min={0}
+              max={2}
+              step={0.1}
+              disabled={disabled}
+              value={aiConfig?.provider?.temperature ?? 0.7}
+              onChange={(e) => {
+                const number = getInputNumber(e)
+                if (isNaN(number)) return
+                setAiConfig({ ...aiConfig, provider: { ...aiConfig?.provider, temperature: number } })
+              }}
+            />
+            <NumberInput
+              label={t('admin.content.settings.ai.max_tokens.label')}
+              description={t('admin.content.settings.ai.max_tokens.description')}
+              placeholder="4096"
+              min={1}
+              max={128000}
+              disabled={disabled}
+              value={aiConfig?.provider?.maxTokens ?? 4096}
+              onChange={(e) => {
+                const number = getInputNumber(e)
+                if (isNaN(number)) return
+                setAiConfig({ ...aiConfig, provider: { ...aiConfig?.provider, maxTokens: number } })
+              }}
             />
           </SimpleGrid>
         </Stack>
