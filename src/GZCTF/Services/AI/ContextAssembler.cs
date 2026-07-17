@@ -52,33 +52,6 @@ public class ContextAssembler
         );
     }
 
-    /// <summary>
-    /// Build a prompt for AI writeup grading
-    /// </summary>
-    public AiRequest BuildGradingRequest(
-        string challengeTitle,
-        string challengeContent,
-        string officialSolution,
-        string rubric,
-        int maxScore,
-        string studentWriteup,
-        string? customPrompt = null)
-    {
-        var systemPrompt = customPrompt ?? BuildGradingSystemPrompt(rubric, maxScore);
-        var userPrompt = BuildGradingUserPrompt(
-            challengeTitle, challengeContent, officialSolution, studentWriteup);
-
-        return new AiRequest(
-            new List<AiMessage>
-            {
-                new(AiMessageRole.System, systemPrompt),
-                new(AiMessageRole.User, userPrompt)
-            },
-            Temperature: 0.3,
-            MaxTokens: 2048
-        );
-    }
-
     #region Hint Prompt Builders
 
     static string BuildHintSystemPrompt() => """
@@ -146,46 +119,6 @@ Rules:
 
         return sb.ToString();
     }
-
-    #endregion
-
-    #region Grading Prompt Builders
-
-    static string BuildGradingSystemPrompt(string rubric, int maxScore) => $"""
-You are an expert CTF writeup grader. Evaluate the student's writeup against the
-official solution and rubric. Be fair — reward correct methodology even if different
-from the official solution. Never penalize valid alternative approaches.
-
-Rubric:
-{rubric}
-
-Maximum Score: {maxScore}
-
-Return ONLY valid JSON in this exact format:
-{{
-  "score": <total score>,
-  "breakdown": {{
-    "category_name": <score>
-  }},
-  "feedback": ["point 1", "point 2"],
-  "strengths": ["strength 1", "strength 2"],
-  "weaknesses": ["weakness 1", "weakness 2"]
-}}
-""";
-
-    static string BuildGradingUserPrompt(
-        string title, string content, string solution, string writeup) => $"""
-Challenge Title: {title}
-Challenge Content: {content}
-
-Official Solution:
-{solution}
-
-Student Writeup:
-{writeup}
-
-Evaluate the student's writeup against the official solution using the rubric.
-""";
 
     #endregion
 
