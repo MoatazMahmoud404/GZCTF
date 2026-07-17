@@ -986,7 +986,7 @@ public class GameController(
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Challenge_NotFound)],
                 StatusCodes.Status404NotFound));
 
-        var challenge = await challengeRepository.GetChallenge(challengeId, token);
+        var challenge = await challengeRepository.GetChallenge(id, challengeId, token);
 
         if (challenge is null)
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_ChallengeNotFound)],
@@ -1002,7 +1002,7 @@ public class GameController(
 
         var user = await userManager.GetUserAsync(User);
         if (user is null)
-            return Unauthorized(new RequestResponse(localizer[nameof(Resources.Program.Account_NotFound)],
+            return Unauthorized(new RequestResponse(localizer[nameof(Resources.Program.Admin_UserNotFound)],
                 StatusCodes.Status401Unauthorized));
 
         // Get player progress context

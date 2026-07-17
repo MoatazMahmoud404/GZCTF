@@ -1,7 +1,7 @@
 using GZCTF.Models.Data;
 using GZCTF.Models.Internal;
-using GZCTF.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace GZCTF.Services.AI;
@@ -15,7 +15,7 @@ public class AiHintService
     readonly IAIProvider _aiProvider;
     readonly ContextAssembler _contextAssembler;
     readonly AiResponseParser _responseParser;
-    readonly ILogRepository _logRepo;
+    readonly IServiceScopeFactory _scopeFactory;
     readonly IOptionsSnapshot<AiGlobalConfig> _aiConfig;
     readonly ILogger<AiHintService> _logger;
 
@@ -23,14 +23,14 @@ public class AiHintService
         IAIProvider aiProvider,
         ContextAssembler contextAssembler,
         AiResponseParser responseParser,
-        ILogRepository logRepo,
+        IServiceScopeFactory scopeFactory,
         IOptionsSnapshot<AiGlobalConfig> aiConfig,
         ILogger<AiHintService> logger)
     {
         _aiProvider = aiProvider;
         _contextAssembler = contextAssembler;
         _responseParser = responseParser;
-        _logRepo = logRepo;
+        _scopeFactory = scopeFactory;
         _aiConfig = aiConfig;
         _logger = logger;
     }
@@ -45,7 +45,7 @@ public class AiHintService
     /// </summary>
     public async Task<int> GetHintCountAsync(int challengeId, int participationId, CancellationToken ct = default)
     {
-        await using var scope = _logRepo.GetScope();
+        await using var scope = _scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         return await db.AiHintLogs
             .CountAsync(h => h.ChallengeId == challengeId && h.ParticipationId == participationId && h.IsSuccess, ct);
@@ -60,7 +60,7 @@ public class AiHintService
         if (cooldown <= 0)
             return false;
 
-        await using var scope = _logRepo.GetScope();
+        await using var scope = _scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var lastHint = await db.AiHintLogs
             .Where(h => h.ChallengeId == challengeId && h.ParticipationId == participationId && h.IsSuccess)
@@ -148,7 +148,7 @@ public class AiHintService
     /// </summary>
     async Task<List<string>> GetExistingHintsAsync(int challengeId, int participationId, CancellationToken ct)
     {
-        await using var scope = _logRepo.GetScope();
+        await using var scope = _scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         return await db.AiHintLogs
             .Where(h => h.ChallengeId == challengeId && h.ParticipationId == participationId && h.IsSuccess)
@@ -165,7 +165,7 @@ public class AiHintService
     {
         try
         {
-            await using var scope = _logRepo.GetScope();
+            await using var scope = _scopeFactory.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
             var log = new AiHintLog
